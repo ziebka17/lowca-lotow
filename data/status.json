@@ -1,6 +1,6 @@
 {
-  "step": "telegram",
-  "ok": false,
-  "message": "Błąd Telegrama: 'TelegramClient' object has no attribute 'resend_code_request'",
-  "time": "2026-09-07T21:12:36+00:00"
+  "step": "code_sent",
+  "ok": true,
+  "message": "Kod wysłany do aplikacji Telegram. Wpisz go na stronie.",
+  "time": "2026-09-07T21:13:12+00:00"
 }
