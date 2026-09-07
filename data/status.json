@@ -1,10 +1,6 @@
 {
-  "step": "scan",
-  "ok": true,
-  "message": "Skan zakończony – brak nowych okazji.",
-  "time": "2026-09-07T21:19:01+00:00",
-  "sent": 0,
-  "sources": [
-    "rss"
-  ]
+  "step": "telegram",
+  "ok": false,
+  "message": "Błąd Telegrama: The phone code entered was invalid (caused by SignInRequest)",
+  "time": "2026-09-07T21:19:45+00:00"
 }
