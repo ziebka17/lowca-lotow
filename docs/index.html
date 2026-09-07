@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a73e8">
+<title>✈️ Łowca tanich lotów</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✈️</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/libsodium-wrappers/0.7.13/sodium.min.js"></script>
+<style>
+  :root { --bg:#f2f4f8; --card:#fff; --line:#e3e7ee; --text:#1c2431; --muted:#6b7686; --accent:#1a73e8; --ok:#0a7d2c; --bad:#c62828; --warn:#a65f00; }
+  * { box-sizing:border-box; } [hidden] { display:none !important; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); font-size:16px; line-height:1.4; }
+  header { position:sticky; top:0; z-index:5; background:#fff; border-bottom:1px solid var(--line); padding:12px 16px; display:flex; align-items:center; gap:10px; }
+  header h1 { font-size:18px; margin:0; flex:1; }
+  main { max-width:640px; margin:0 auto; padding:14px 14px 60px; display:flex; flex-direction:column; gap:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .card h2 { font-size:17px; margin:0 0 4px; display:flex; align-items:center; gap:8px; }
+  .hint { color:var(--muted); font-size:14px; margin:0 0 10px; } .hint a { color:var(--accent); }
+  label { display:block; font-size:13px; color:var(--muted); margin:12px 0 4px; }
+  input, textarea, select { width:100%; padding:12px; border:1px solid var(--line); border-radius:10px; font-size:16px; font-family:inherit; background:#fff; }
+  input:focus, textarea:focus { outline:2px solid #cfe0fb; border-color:var(--accent); }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  button { border:0; border-radius:10px; padding:12px 16px; font-size:15px; font-weight:600; cursor:pointer; background:#eef1f5; color:var(--text); font-family:inherit; flex:1; min-width:120px; }
+  button.primary { background:var(--accent); color:#fff; } button.danger { background:#fdecea; color:var(--bad); } button.big { padding:16px; font-size:17px; }
+  button:disabled { opacity:.5; }
+  .msg { font-size:14px; margin-top:10px; min-height:20px; } .ok { color:var(--ok); } .bad { color:var(--bad); } .warn { color:var(--warn); }
+  .badge { display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:4px 10px; border-radius:999px; background:#eef1f5; color:var(--muted); }
+  .badge.on { background:#e6f4ea; color:var(--ok); } .badge.off { background:#fdecea; color:var(--bad); } .badge.busy { background:#fff4e0; color:var(--warn); }
+  .checklist { display:flex; flex-direction:column; gap:8px; } .check { display:flex; align-items:center; gap:10px; font-size:15px; }
+  .check .ic { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; flex:none; background:#fdecea; color:var(--bad); } .check.done .ic { background:#e6f4ea; color:var(--ok); }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .chip { display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-size:14px; background:#fafbfc; width:100%; }
+  .chip input { width:20px; height:20px; margin:0; }
+  .deal { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .deal:last-child { border-bottom:0; } .deal .route { font-weight:700; } .deal .meta { font-size:12px; color:var(--muted); } .deal .price { color:var(--ok); font-weight:800; font-size:18px; white-space:nowrap; }
+  .deal a { color:var(--accent); font-size:14px; white-space:nowrap; }
+  details summary { cursor:pointer; color:var(--muted); font-size:14px; margin-top:8px; }
+  .spinner { display:inline-block; width:14px; height:14px; border:2px solid #ccc; border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; vertical-align:-2px; margin-right:6px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  pre { background:#0f172a; color:#d7dee8; font-size:12px; padding:12px; border-radius:10px; max-height:240px; overflow:auto; white-space:pre-wrap; margin:0; }
+  .steps { display:flex; flex-direction:column; gap:8px; } .step { display:flex; gap:10px; } .step .n { width:24px; height:24px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex:none; margin-top:2px; }
+  .urlbox { font-size:18px; font-weight:700; word-break:break-all; background:#e8f0fe; padding:14px; border-radius:10px; margin-top:10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>✈️ Łowca tanich lotów</h1>
+  <span class="badge" id="badgeRun"><span class="dot"></span>…</span>
+</header>
+
+<main>
+  <!-- ===================== INSTALATOR (tylko INSTALATOR.html) ===================== -->
+  <section class="card" id="installer" hidden>
+    <h2>Instalacja w chmurze – jednorazowo</h2>
+    <p class="hint">Zajmie ok. 3 minuty. Aplikacja zamieszka na Twoim koncie GitHub (za darmo) i będzie działać bez komputera, a sterować nią będziesz ze strony na telefonie.</p>
+    <div class="steps">
+      <div class="step"><span class="n">1</span><span>Załóż konto na <a href="https://github.com/signup" target="_blank">github.com ↗</a> (jeśli nie masz) i zaloguj się.</span></div>
+      <div class="step"><span class="n">2</span><span><a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=lowca-lotow" target="_blank">Utwórz token ↗</a> – na tej stronie: „Expiration” ustaw na <b>No expiration</b>, zjedź na dół, kliknij <b>Generate token</b> i skopiuj ciąg zaczynający się od <code>ghp_</code>.</span></div>
+      <div class="step"><span class="n">3</span><span>Wklej token poniżej i kliknij „Zainstaluj”.</span></div>
+    </div>
+    <label>Token GitHub</label><input type="password" id="instToken" placeholder="ghp_…" autocomplete="off">
+    <details><summary>Zaawansowane</summary><label>Nazwa repozytorium</label><input type="text" id="instRepo" value="lowca-lotow"></details>
+    <div class="actions"><button class="primary big" id="btnInstall" onclick="install()">Zainstaluj</button></div>
+    <div class="msg" id="instMsg"></div>
+    <pre id="instLog" hidden></pre>
+    <div id="instDone" hidden>
+      <p class="ok" style="font-weight:700;font-size:17px;margin:12px 0 4px">✓ Zainstalowano!</p>
+      <p class="hint">Otwórz ten adres na telefonie (za 1–2 min, gdy strona się opublikuje) i dodaj do ekranu głównego. Przy pierwszym wejściu wkleisz ten sam token.</p>
+      <div class="urlbox" id="instUrl"></div>
+      <div class="actions"><button class="primary" onclick="openPanel()">Otwórz panel teraz (tu, na komputerze)</button></div>
+    </div>
+  </section>
+
+  <!-- ===================== LOGOWANIE TOKENEM (telefon, pierwszy raz) ===================== -->
+  <section class="card" id="login" hidden>
+    <h2>Połącz z Twoim kontem GitHub</h2>
+    <p class="hint">Wklej ten sam token, którego użyłeś przy instalacji (albo <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=lowca-lotow-telefon" target="_blank">utwórz nowy ↗</a>). Zostaje zapisany tylko w tej przeglądarce.</p>
+    <label>Token GitHub</label><input type="password" id="loginToken" placeholder="ghp_…" autocomplete="off">
+    <details><summary>Zaawansowane</summary><label>Nazwa repozytorium</label><input type="text" id="loginRepo" value="lowca-lotow"></details>
+    <div class="actions"><button class="primary big" onclick="login()">Połącz</button></div>
+    <div class="msg" id="loginMsg"></div>
+  </section>
+
+  <!-- ===================== PANEL ===================== -->
+  <div id="panel" hidden>
+    <section class="card">
+      <h2>Do zrobienia</h2>
+      <div class="checklist">
+        <div class="check" id="ckEmail"><span class="ic">✗</span><span>E-mail do powiadomień</span></div>
+        <div class="check" id="ckTg"><span class="ic">✗</span><span>Telegram (najszybsze okazje)</span></div>
+        <div class="check" id="ckCh"><span class="ic">✗</span><span>Wybrane kanały Telegram</span></div>
+      </div>
+      <div class="actions"><button class="primary big" id="btnScan" onclick="scanNow()">🔍 Skanuj teraz</button></div>
+      <div class="msg" id="msgScan"></div>
+    </section>
+
+    <section class="card">
+      <h2>1. E-mail</h2>
+      <p class="hint">Potrzebne jest <b>hasło aplikacji</b> Gmail: włącz weryfikację dwuetapową, potem <a href="https://myaccount.google.com/apppasswords" target="_blank">utwórz hasło aplikacji ↗</a> i skopiuj 16 znaków.</p>
+      <label>Twój Gmail</label><input type="email" id="SMTP_USER" placeholder="imie@gmail.com" autocomplete="off">
+      <label>Hasło aplikacji <span id="pwdState"></span></label><input type="password" id="SMTP_PASSWORD" placeholder="xxxx xxxx xxxx xxxx" autocomplete="off">
+      <label>Wysyłaj na adres (puste = ten sam)</label><input type="email" id="EMAIL_TO" placeholder="(opcjonalnie)">
+      <div class="actions"><button class="primary" onclick="saveEmail()">Zapisz</button><button onclick="testEmail()">Wyślij testowego maila</button></div>
+      <div class="msg" id="msgEmail"></div>
+    </section>
+
+    <section class="card">
+      <h2>2. Telegram</h2>
+      <p class="hint">Wejdź na <a href="https://my.telegram.org/apps" target="_blank">my.telegram.org/apps ↗</a>, zaloguj się numerem, utwórz aplikację (nazwa dowolna) i przepisz <b>api_id</b> i <b>api_hash</b>.</p>
+      <div class="row">
+        <div><label>api_id</label><input type="text" id="TELEGRAM_API_ID" inputmode="numeric" placeholder="1234567"></div>
+        <div><label>api_hash <span id="hashState"></span></label><input type="password" id="TELEGRAM_API_HASH" autocomplete="off"></div>
+      </div>
+      <div id="tgLoginBox">
+        <label>Numer telefonu (z +48)</label><input type="tel" id="tgPhone" placeholder="+48600100200">
+        <div class="actions"><button class="primary" id="btnCode" onclick="tgSendCode()">Wyślij kod na Telegram</button></div>
+        <div id="tgCodeBox" hidden>
+          <label>Kod z aplikacji Telegram</label><input type="text" id="tgCode" inputmode="numeric" placeholder="12345">
+          <div id="tgPassBox" hidden><label>Hasło dwuetapowe Telegrama</label><input type="password" id="tgPassword"></div>
+          <div class="actions"><button class="primary" id="btnSignIn" onclick="tgSignIn()">Zaloguj</button></div>
+        </div>
+      </div>
+      <div id="tgLoggedBox" hidden>
+        <p class="ok" style="margin:10px 0 0">✓ Zalogowano do Telegrama</p>
+        <p class="hint">Zaznacz kanały do śledzenia. Nie ma kanału? Dołącz do niego w aplikacji Telegram i kliknij „Odśwież listę”.</p>
+        <div class="chips" id="chips"></div>
+        <div class="actions"><button class="primary" onclick="saveChannels()">Zapisz kanały</button><button onclick="tgRefreshChannels()">Odśwież listę</button><button class="danger" onclick="tgLogout()">Wyloguj</button></div>
+      </div>
+      <div class="msg" id="msgTg"></div>
+    </section>
+
+    <section class="card">
+      <h2>3. Lotniska i progi</h2>
+      <label>Lotniska wylotu (kody po przecinku)</label><input type="text" id="HOME_AIRPORTS">
+      <div class="row">
+        <div><label>Europa – taniej niż (PLN)</label><input type="number" id="MAX_PRICE_EUROPE_PLN" inputmode="numeric"></div>
+        <div><label>Daleki dystans – taniej niż (PLN)</label><input type="number" id="MAX_PRICE_LONGHAUL_PLN" inputmode="numeric"></div>
+      </div>
+      <details><summary>Więcej ustawień</summary>
+        <label>Spadek vs. typowa cena (0.5 = −50%)</label><input type="number" step="0.05" id="PRICE_DROP_RATIO">
+        <label>Kanały RSS (po przecinku)</label><textarea id="RSS_FEEDS" rows="3"></textarea>
+        <label>Strony promocji linii (Ryanair/Wizz/LOT)</label><select id="ENABLE_AIRLINE_PAGES"><option value="0">wyłączone</option><option value="1">włączone</option></select>
+        <label>Tryb testowy (nie wysyłaj maili)</label><select id="DRY_RUN"><option value="0">wyłączony</option><option value="1">włączony</option></select>
+      </details>
+      <div class="actions"><button class="primary" onclick="saveThresholds()">Zapisz</button></div>
+      <div class="msg" id="msgThr"></div>
+    </section>
+
+    <section class="card">
+      <h2>Znalezione okazje <span class="badge" id="dealCount">0</span></h2>
+      <p class="hint">Oferty, o których wysłano maila. Prawdziwe error fares zdarzają się kilka razy w miesiącu – pusta lista na początku jest normalna.</p>
+      <div id="deals"></div>
+    </section>
+
+    <section class="card">
+      <h2>Stan</h2>
+      <p class="hint" id="statusLine">…</p>
+      <p class="hint">Skaner uruchamia się sam co 15 minut. <a id="actionsLink" href="#" target="_blank">Historia uruchomień ↗</a></p>
+      <details><summary>Rozłącz to urządzenie</summary><div class="actions"><button class="danger" onclick="logout()">Zapomnij token na tym urządzeniu</button></div></details>
+    </section>
+  </div>
+</main>
+
+<script>
+/* ============================================================ narzędzia */
+const $ = id => document.getElementById(id);
+const API = "https://api.github.com";
+const LS = { token: "efh_token", repo: "efh_repo", owner: "efh_owner" };
+const VAR_KEYS = ["SMTP_USER","EMAIL_TO","TELEGRAM_API_ID","TELEGRAM_CHANNELS","HOME_AIRPORTS","MAX_PRICE_EUROPE_PLN","MAX_PRICE_LONGHAUL_PLN","PRICE_DROP_RATIO","RSS_FEEDS","ENABLE_AIRLINE_PAGES","DRY_RUN"];
+const DEFAULT_VARS = {
+  HOME_AIRPORTS: "WAW,WMI,KRK,GDN,KTW,WRO,POZ,BER", MAX_PRICE_EUROPE_PLN: "60", MAX_PRICE_LONGHAUL_PLN: "1000", PRICE_DROP_RATIO: "0.5",
+  TELEGRAM_CHANNELS: "", RSS_FEEDS: "https://www.fly4free.pl/feed/,https://loter.pl/feed/,https://www.pepper.pl/rss/grupa/podroze",
+  ENABLE_AIRLINE_PAGES: "0", DRY_RUN: "0", SMTP_HOST: "smtp.gmail.com", SMTP_PORT: "587",
+};
+let S = { token: null, repo: null, owner: null, vars: {}, secrets: new Set(), status: null, channels: [], busy: false };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function msg(id, text, cls) { const el = $(id); el.innerHTML = text; el.className = "msg " + (cls || ""); }
+function spinner(text) { return `<span class="spinner"></span>${text}`; }
+function esc(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+async function gh(method, path, body, extraHeaders) {
+  const r = await fetch(API + path, {
+    method, headers: Object.assign({ "Authorization": "Bearer " + S.token, "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28", ...(body ? {"Content-Type": "application/json"} : {}) }, extraHeaders || {}),
+    body: body ? JSON.stringify(body) : undefined, cache: "no-store",
+  });
+  let data = null; const txt = await r.text();
+  try { data = txt ? JSON.parse(txt) : null; } catch { data = txt; }
+  return { ok: r.ok, status: r.status, data };
+}
+const repoPath = () => `/repos/${S.owner}/${S.repo}`;
+
+async function readFile(path) {  // plik z repozytorium (raw), null gdy brak
+  const r = await gh("GET", `${repoPath()}/contents/${path}?ref=main&t=${Date.now()}`, null, { "Accept": "application/vnd.github.raw+json" });
+  if (!r.ok) return null;
+  try { return typeof r.data === "string" ? JSON.parse(r.data) : r.data; } catch { return null; }
+}
+async function setVar(name, value) {
+  const r = await gh("PATCH", `${repoPath()}/actions/variables/${name}`, { name, value: String(value) });
+  if (r.status === 404) return (await gh("POST", `${repoPath()}/actions/variables`, { name, value: String(value) })).ok;
+  return r.ok;
+}
+async function setSecret(name, value) {
+  await sodium.ready;
+  const pk = (await gh("GET", `${repoPath()}/actions/secrets/public-key`)).data;
+  const sealed = sodium.crypto_box_seal(sodium.from_string(value), sodium.from_base64(pk.key, sodium.base64_variants.ORIGINAL));
+  const r = await gh("PUT", `${repoPath()}/actions/secrets/${name}`, { encrypted_value: sodium.to_base64(sealed, sodium.base64_variants.ORIGINAL), key_id: pk.key_id });
+  return r.ok;
+}
+async function deleteSecret(name) { return (await gh("DELETE", `${repoPath()}/actions/secrets/${name}`)).ok; }
+async function dispatch(workflow, inputs) {
+  const r = await gh("POST", `${repoPath()}/actions/workflows/${workflow}/dispatches`, { ref: "main", inputs: inputs || {} });
+  return r.ok;
+}
+/* czekaj, aż workflow zapisze nowy data/status.json (nowszy niż `after`) */
+async function waitForStatus(after, timeoutMs = 300000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    await sleep(7000);
+    const st = await readFile("data/status.json");
+    if (st && st.time && new Date(st.time).getTime() > after - 2000) { S.status = st; return st; }
+  }
+  return null;
+}
+
+/* ============================================================ start */
+window.addEventListener("DOMContentLoaded", async () => {
+  const bundle = document.getElementById("bundle");
+  const inst = $("installer");
+  if (bundle) { inst.hidden = false; $("badgeRun").hidden = true; return; }   // tryb instalatora
+  S.token = localStorage.getItem(LS.token); S.repo = localStorage.getItem(LS.repo) || "lowca-lotow"; S.owner = localStorage.getItem(LS.owner);
+  if (!S.token) { $("login").hidden = false; $("badgeRun").hidden = true; return; }
+  await openPanel();
+});
+
+async function login() {
+  const token = $("loginToken").value.trim(); const repo = $("loginRepo").value.trim() || "lowca-lotow";
+  if (!token) { msg("loginMsg", "Wklej token.", "bad"); return; }
+  msg("loginMsg", spinner("Sprawdzam…"), "warn");
+  S.token = token; S.repo = repo;
+  const u = await gh("GET", "/user");
+  if (!u.ok) { msg("loginMsg", "GitHub odrzucił token. Sprawdź, czy skopiowałeś całość.", "bad"); return; }
+  S.owner = u.data.login;
+  const r = await gh("GET", repoPath());
+  if (!r.ok) { msg("loginMsg", `Nie znalazłem repozytorium „${repo}” na koncie ${S.owner}. Najpierw uruchom INSTALATOR.html na komputerze.`, "bad"); return; }
+  localStorage.setItem(LS.token, token); localStorage.setItem(LS.repo, repo); localStorage.setItem(LS.owner, S.owner);
+  $("login").hidden = true; await openPanel();
+}
+function logout() { localStorage.clear(); location.reload(); }
+
+async function openPanel() {
+  $("installer").hidden = true; $("login").hidden = true; $("panel").hidden = false; $("badgeRun").hidden = false;
+  if (!S.owner) { const u = await gh("GET", "/user"); if (u.ok) { S.owner = u.data.login; localStorage.setItem(LS.owner, S.owner); } }
+  $("actionsLink").href = `https://github.com/${S.owner}/${S.repo}/actions`;
+  await refresh(true);
+  setInterval(() => refresh(false), 30000);
+}
+
+async function refresh(fillInputs) {
+  const [vars, secrets, status, deals, channels, runs] = await Promise.all([
+    gh("GET", `${repoPath()}/actions/variables?per_page=100`), gh("GET", `${repoPath()}/actions/secrets?per_page=100`),
+    readFile("data/status.json"), readFile("data/deals.json"), readFile("data/channels.json"),
+    gh("GET", `${repoPath()}/actions/runs?per_page=3`),
+  ]);
+  S.vars = Object.assign({}, DEFAULT_VARS, Object.fromEntries(((vars.data || {}).variables || []).map(v => [v.name, v.value])));
+  S.secrets = new Set((((secrets.data || {}).secrets) || []).map(s => s.name));
+  S.status = status; S.channels = channels || [];
+  if (fillInputs) VAR_KEYS.forEach(k => { if ($(k) && S.vars[k] !== undefined) $(k).value = S.vars[k]; });
+
+  const emailOk = !!(S.vars.SMTP_USER && S.secrets.has("SMTP_PASSWORD"));
+  const tgOk = S.secrets.has("TELEGRAM_SESSION"); const chOk = !!S.vars.TELEGRAM_CHANNELS;
+  setCheck("ckEmail", emailOk); setCheck("ckTg", tgOk); setCheck("ckCh", chOk);
+  $("pwdState").textContent = S.secrets.has("SMTP_PASSWORD") ? "✓ ustawione" : ""; $("hashState").textContent = S.secrets.has("TELEGRAM_API_HASH") ? "✓ ustawione" : "";
+  $("tgLoginBox").hidden = tgOk; $("tgLoggedBox").hidden = !tgOk;
+  if (tgOk) renderChips();
+
+  const running = (((runs.data || {}).workflow_runs) || []).some(r => r.status === "in_progress" || r.status === "queued");
+  const b = $("badgeRun"); b.className = "badge " + (running ? "busy" : (emailOk ? "on" : "off"));
+  b.textContent = running ? "⏳ pracuje…" : (emailOk ? "● gotowy" : "● skonfiguruj e-mail");
+  $("statusLine").textContent = status ? `${status.ok ? "✓" : "✗"} ${status.message}  (${new Date(status.time).toLocaleString("pl-PL")})` : "Jeszcze nie było uruchomienia.";
+
+  const list = deals || []; $("dealCount").textContent = list.length;
+  $("deals").innerHTML = list.length ? list.map(d => `<div class="deal"><div><div class="route">${esc(d.route)}</div><div class="meta">${esc(d.seen_at)} · ${esc(d.source)}</div></div><div class="price">${Math.round(d.price)} zł</div><a href="${esc(d.url)}" target="_blank">otwórz ↗</a></div>`).join("")
+    : `<p class="hint" style="margin:0">Jeszcze nic – gdy skaner coś znajdzie, pojawi się tutaj i na mailu.</p>`;
+}
+function setCheck(id, ok) { const el = $(id); el.className = "check " + (ok ? "done" : ""); el.querySelector(".ic").textContent = ok ? "✓" : "✗"; }
+
+/* ============================================================ e-mail */
+async function saveEmail() {
+  msg("msgEmail", spinner("Zapisuję…"), "warn");
+  const user = $("SMTP_USER").value.trim(), to = $("EMAIL_TO").value.trim(), pwd = $("SMTP_PASSWORD").value.replace(/\s+/g, "");
+  if (!user) { msg("msgEmail", "Wpisz adres Gmail.", "bad"); return false; }
+  await setVar("SMTP_USER", user); await setVar("EMAIL_TO", to || user);
+  if (pwd) { if (!await setSecret("SMTP_PASSWORD", pwd)) { msg("msgEmail", "Nie udało się zapisać hasła.", "bad"); return false; } $("SMTP_PASSWORD").value = ""; }
+  await refresh(false); msg("msgEmail", "✓ Zapisano", "ok"); return true;
+}
+async function testEmail() {
+  if (!await saveEmail()) return;
+  if (!S.secrets.has("SMTP_PASSWORD")) { msg("msgEmail", "Wpisz hasło aplikacji.", "bad"); return; }
+  const t = Date.now(); msg("msgEmail", spinner("Wysyłam testowego maila (ok. 1 min)…"), "warn");
+  if (!await dispatch("checker.yml", { mode: "test_email" })) { msg("msgEmail", "Nie udało się uruchomić – spróbuj za chwilę.", "bad"); return; }
+  const st = await waitForStatus(t);
+  msg("msgEmail", st ? (st.ok ? "✓ " + st.message : "✗ " + st.message) : "Brak odpowiedzi – sprawdź Historię uruchomień.", st && st.ok ? "ok" : "bad");
+}
+
+/* ============================================================ telegram */
+async function saveTgCreds() {
+  const id = $("TELEGRAM_API_ID").value.trim(), hash = $("TELEGRAM_API_HASH").value.trim();
+  if (id) await setVar("TELEGRAM_API_ID", id);
+  if (hash) { await setSecret("TELEGRAM_API_HASH", hash); $("TELEGRAM_API_HASH").value = ""; }
+  await refresh(false);
+  return !!(S.vars.TELEGRAM_API_ID && S.secrets.has("TELEGRAM_API_HASH"));
+}
+async function tgSendCode() {
+  msg("msgTg", spinner("Zapisuję…"), "warn");
+  if (!await saveTgCreds()) { msg("msgTg", "Wpisz api_id i api_hash z my.telegram.org.", "bad"); return; }
+  const phone = $("tgPhone").value.trim();
+  if (!phone.startsWith("+")) { msg("msgTg", "Numer z kierunkowym, np. +48600100200", "bad"); return; }
+  $("btnCode").disabled = true; const t = Date.now();
+  msg("msgTg", spinner("Wysyłam kod przez chmurę (ok. 1 min)… Gdy przyjdzie do aplikacji Telegram, wpisz go poniżej."), "warn");
+  if (!await dispatch("telegram-login.yml", { action: "send_code", phone })) { msg("msgTg", "Nie udało się uruchomić.", "bad"); $("btnCode").disabled = false; return; }
+  $("tgCodeBox").hidden = false;
+  const st = await waitForStatus(t); $("btnCode").disabled = false;
+  if (!st) { msg("msgTg", "Brak odpowiedzi z chmury – sprawdź Historię uruchomień.", "bad"); return; }
+  msg("msgTg", (st.ok ? "✓ " : "✗ ") + st.message, st.ok ? "ok" : "bad");
+}
+async function tgSignIn() {
+  const code = $("tgCode").value.trim(), password = $("tgPassword").value;
+  if (!code) { msg("msgTg", "Wpisz kod z Telegrama.", "bad"); return; }
+  $("btnSignIn").disabled = true; const t = Date.now(); msg("msgTg", spinner("Loguję (ok. 1 min)…"), "warn");
+  if (!await dispatch("telegram-login.yml", { action: "sign_in", code, password })) { msg("msgTg", "Nie udało się uruchomić.", "bad"); $("btnSignIn").disabled = false; return; }
+  const st = await waitForStatus(t); $("btnSignIn").disabled = false;
+  if (!st) { msg("msgTg", "Brak odpowiedzi z chmury.", "bad"); return; }
+  if (st.step === "needs_password") $("tgPassBox").hidden = false;
+  msg("msgTg", (st.ok ? "✓ " : "✗ ") + st.message, st.ok ? "ok" : "bad");
+  await refresh(false);
+}
+async function tgRefreshChannels() {
+  msg("msgTg", "Aby odświeżyć listę, zaloguj się ponownie (Wyloguj → Wyślij kod). Lista jest pobierana przy logowaniu.", "warn");
+}
+async function tgLogout() { await deleteSecret("TELEGRAM_SESSION"); await setVar("TELEGRAM_CHANNELS", ""); await refresh(false); }
+function renderChips() {
+  const sel = new Set((S.vars.TELEGRAM_CHANNELS || "").split(",").filter(Boolean));
+  $("chips").innerHTML = S.channels.length ? S.channels.map(c => `<label class="chip"><input type="checkbox" value="${esc(c.username)}" ${sel.has(c.username) ? "checked" : ""}> <span>${esc(c.name)} <span style="color:var(--muted)">t.me/${esc(c.username)}</span></span></label>`).join("")
+    : `<p class="hint">Brak publicznych kanałów na tym koncie. Dołącz w Telegramie do Fly4free, Łowcy Mamutów, Pepper, Loter i zaloguj ponownie.</p>`;
+}
+async function saveChannels() {
+  const picked = [...document.querySelectorAll("#chips input:checked")].map(i => i.value).join(",");
+  await setVar("TELEGRAM_CHANNELS", picked); await refresh(false); msg("msgTg", picked ? "✓ Zapisano kanały: " + picked : "Nie zaznaczono żadnego kanału.", picked ? "ok" : "warn");
+}
+
+/* ============================================================ progi */
+async function saveThresholds() {
+  msg("msgThr", spinner("Zapisuję…"), "warn");
+  for (const k of ["HOME_AIRPORTS","MAX_PRICE_EUROPE_PLN","MAX_PRICE_LONGHAUL_PLN","PRICE_DROP_RATIO","RSS_FEEDS","ENABLE_AIRLINE_PAGES","DRY_RUN"]) await setVar(k, $(k).value.trim());
+  await refresh(false); msg("msgThr", "✓ Zapisano", "ok");
+}
+
+/* ============================================================ skan */
+async function scanNow() {
+  $("btnScan").disabled = true; const t = Date.now(); msg("msgScan", spinner("Skanuję w chmurze (1–3 min)…"), "warn");
+  if (!await dispatch("checker.yml", { mode: "scan" })) { msg("msgScan", "Nie udało się uruchomić – spróbuj za chwilę.", "bad"); $("btnScan").disabled = false; return; }
+  const st = await waitForStatus(t); $("btnScan").disabled = false;
+  msg("msgScan", st ? (st.ok ? "✓ " : "✗ ") + st.message : "Skan trwa dłużej niż zwykle – wynik pojawi się w sekcji Stan.", st && st.ok ? "ok" : "warn");
+  await refresh(false);
+}
+
+/* ============================================================ instalator */
+function ilog(t) { const el = $("instLog"); el.hidden = false; el.textContent += t + "\n"; el.scrollTop = el.scrollHeight; }
+async function install() {
+  const token = $("instToken").value.trim(); const repo = $("instRepo").value.trim() || "lowca-lotow";
+  if (!token) { msg("instMsg", "Wklej token.", "bad"); return; }
+  $("btnInstall").disabled = true; msg("instMsg", spinner("Instaluję…"), "warn"); $("instLog").textContent = "";
+  S.token = token; S.repo = repo;
+  try {
+    const u = await gh("GET", "/user");
+    if (!u.ok) throw new Error("GitHub odrzucił token – skopiuj go w całości (zaczyna się od ghp_).");
+    S.owner = u.data.login; ilog("✓ Zalogowano jako " + S.owner);
+
+    let r = await gh("GET", repoPath());
+    if (r.status === 404) {
+      r = await gh("POST", "/user/repos", { name: repo, private: false, auto_init: true, description: "Łowca error fares z polskich lotnisk – sterowanie: docs/index.html" });
+      if (!r.ok) throw new Error("Nie udało się utworzyć repozytorium: " + (r.data && r.data.message));
+      ilog("✓ Utworzono repozytorium " + repo + " (publiczne – wymagane dla darmowej strony; sekrety pozostają tajne)");
+      for (let i = 0; i < 10; i++) { await sleep(1500); if ((await gh("GET", `${repoPath()}/git/ref/heads/main`)).ok) break; }
+    } else if (!r.ok) throw new Error("Błąd GitHub: " + (r.data && r.data.message));
+    else ilog("✓ Repozytorium już istnieje – aktualizuję pliki");
+
+    const files = JSON.parse(document.getElementById("bundle").textContent);
+    const ref = await gh("GET", `${repoPath()}/git/ref/heads/main`);
+    const baseSha = ref.data.object.sha;
+    const baseCommit = await gh("GET", `${repoPath()}/git/commits/${baseSha}`);
+    const tree = []; let n = 0;
+    for (const [path, b64] of Object.entries(files)) {
+      const blob = await gh("POST", `${repoPath()}/git/blobs`, { content: b64, encoding: "base64" });
+      if (!blob.ok) throw new Error("Błąd wysyłania " + path);
+      tree.push({ path, mode: "100644", type: "blob", sha: blob.data.sha });
+      if (++n % 8 === 0) ilog(`  … wysłano ${n}/${Object.keys(files).length} plików`);
+    }
+    const newTree = await gh("POST", `${repoPath()}/git/trees`, { base_tree: baseCommit.data.tree.sha, tree });
+    const commit = await gh("POST", `${repoPath()}/git/commits`, { message: "Instalacja łowcy tanich lotów", tree: newTree.data.sha, parents: [baseSha] });
+    const upd = await gh("PATCH", `${repoPath()}/git/refs/heads/main`, { sha: commit.data.sha, force: true });
+    if (!upd.ok) throw new Error("Nie udało się zapisać plików.");
+    ilog(`✓ Wysłano ${tree.length} plików`);
+
+    if (!await setSecret("GH_PAT", token)) throw new Error("Nie udało się zapisać sekretu GH_PAT.");
+    ilog("✓ Zapisano token jako sekret (potrzebny do logowania Telegrama z telefonu)");
+    for (const [k, v] of Object.entries(DEFAULT_VARS)) await setVar(k, v);
+    ilog("✓ Ustawiono domyślne progi i lotniska");
+    await gh("PUT", `${repoPath()}/actions/permissions/workflow`, { default_workflow_permissions: "write", can_approve_pull_request_reviews: false });
+    ilog("✓ Włączono zapis stanu przez Actions");
+
+    let p = await gh("POST", `${repoPath()}/pages`, { source: { branch: "main", path: "/docs" } });
+    if (!p.ok && p.status !== 409) { p = await gh("PUT", `${repoPath()}/pages`, { source: { branch: "main", path: "/docs" } }); }
+    await gh("POST", `${repoPath()}/pages/builds`);
+    ilog("✓ Włączono stronę na telefon (GitHub Pages)");
+
+    localStorage.setItem(LS.token, token); localStorage.setItem(LS.repo, repo); localStorage.setItem(LS.owner, S.owner);
+    const url = `https://${S.owner.toLowerCase()}.github.io/${repo}/`;
+    $("instUrl").textContent = url; $("instDone").hidden = false; msg("instMsg", "", "");
+  } catch (e) {
+    msg("instMsg", "✗ " + e.message, "bad"); ilog("✗ " + e.message);
+  }
+  $("btnInstall").disabled = false;
+}
+</script>
+</body>
+</html>

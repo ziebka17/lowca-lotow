@@ -1,0 +1,63 @@
+name: Telegram login
+
+# Uruchamiany ze strony na telefonie (workflow_dispatch). Dwa kroki:
+#   send_code (phone)  ->  sign_in (code, opcjonalnie password 2FA)
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "send_code lub sign_in"
+        required: true
+      phone:
+        description: "numer telefonu z +48 (send_code)"
+        required: false
+      code:
+        description: "kod z aplikacji Telegram (sign_in)"
+        required: false
+      password:
+        description: "hasło dwuetapowe Telegrama (sign_in, jeśli włączone)"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hunter-state
+  cancel-in-progress: false
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Zależności (tylko potrzebne – szybko, bo kod z Telegrama wygasa)
+        run: pip install telethon requests pynacl
+      - name: Telegram
+        env:
+          ACTION: ${{ github.event.inputs.action }}
+          PHONE: ${{ github.event.inputs.phone }}
+          CODE: ${{ github.event.inputs.code }}
+          PASSWORD: ${{ github.event.inputs.password }}
+          TELEGRAM_API_ID: ${{ vars.TELEGRAM_API_ID || secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TG_PENDING: ${{ secrets.TG_PENDING }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: python scripts/telegram_login.py
+      - name: Zapisz status do repozytorium
+        if: always()
+        run: |
+          git config user.name "error-fare-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/status.json data/channels.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: telegram login [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin ${{ github.ref_name }} && git push && break
+              sleep 5
+            done
+          fi

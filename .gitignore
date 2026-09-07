@@ -1,0 +1,11 @@
+.env
+*.session
+*.session-journal
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+# Bazę data/seen_deals.db celowo commitujemy (stan między uruchomieniami w Actions)
+data/*.db-wal
+data/*.db-shm

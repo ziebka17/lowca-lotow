@@ -1,0 +1,1 @@
+"""Kanały powiadomień (e-mail)."""

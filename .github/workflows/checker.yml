@@ -1,0 +1,94 @@
+name: Error fare checker
+
+on:
+  schedule:
+    # Co 15 minut (UTC). GitHub może opóźniać zadania cron o kilka–kilkanaście minut.
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "scan = normalny skan, test_email = wyślij testowego maila"
+        default: "scan"
+        required: false
+
+# Workflow zapisuje bazę deduplikacji i pliki stanu z powrotem do repozytorium
+permissions:
+  contents: write
+
+concurrency:
+  group: hunter-state
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Pobierz repozytorium
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Zainstaluj zależności
+        run: pip install -r requirements.txt
+
+      - name: Chromium dla Playwright (tylko gdy włączone strony linii lub Facebook)
+        if: ${{ (vars.ENABLE_AIRLINE_PAGES || secrets.ENABLE_AIRLINE_PAGES) == '1' || (vars.ENABLE_FACEBOOK || secrets.ENABLE_FACEBOOK) == '1' }}
+        run: python -m playwright install --with-deps chromium
+
+      - name: Uruchom skaner
+        env:
+          DRY_RUN: ${{ vars.DRY_RUN || '0' }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL || 'INFO' }}
+          HOME_AIRPORTS: ${{ vars.HOME_AIRPORTS || secrets.HOME_AIRPORTS }}
+          MAX_PRICE_EUROPE_PLN: ${{ vars.MAX_PRICE_EUROPE_PLN || secrets.MAX_PRICE_EUROPE_PLN }}
+          MAX_PRICE_LONGHAUL_PLN: ${{ vars.MAX_PRICE_LONGHAUL_PLN || secrets.MAX_PRICE_LONGHAUL_PLN }}
+          PRICE_DROP_RATIO: ${{ vars.PRICE_DROP_RATIO || secrets.PRICE_DROP_RATIO }}
+          API_DESTINATIONS: ${{ vars.API_DESTINATIONS || secrets.API_DESTINATIONS }}
+          TELEGRAM_CHANNELS: ${{ vars.TELEGRAM_CHANNELS || secrets.TELEGRAM_CHANNELS }}
+          TELEGRAM_API_ID: ${{ vars.TELEGRAM_API_ID || secrets.TELEGRAM_API_ID }}
+          RSS_FEEDS: ${{ vars.RSS_FEEDS || secrets.RSS_FEEDS }}
+          ENABLE_FACEBOOK: ${{ vars.ENABLE_FACEBOOK || secrets.ENABLE_FACEBOOK || '0' }}
+          ENABLE_AIRLINE_PAGES: ${{ vars.ENABLE_AIRLINE_PAGES || secrets.ENABLE_AIRLINE_PAGES || '0' }}
+          FACEBOOK_PAGES: ${{ vars.FACEBOOK_PAGES || secrets.FACEBOOK_PAGES }}
+          SMTP_HOST: ${{ vars.SMTP_HOST || secrets.SMTP_HOST || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || secrets.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ vars.SMTP_USER || secrets.SMTP_USER }}
+          EMAIL_FROM: ${{ vars.SMTP_USER || secrets.EMAIL_FROM || secrets.SMTP_USER }}
+          EMAIL_TO: ${{ vars.EMAIL_TO || secrets.EMAIL_TO || vars.SMTP_USER || secrets.SMTP_USER }}
+          # Sekrety
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          KIWI_API_KEY: ${{ secrets.KIWI_API_KEY }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          DUFFEL_ACCESS_TOKEN: ${{ secrets.DUFFEL_ACCESS_TOKEN }}
+        run: |
+          if [ "${{ github.event.inputs.mode }}" = "test_email" ]; then
+            python main.py --test-email || true
+          else
+            python main.py || true
+          fi
+          python scripts/export_state.py
+
+      - name: Zapisz stan do repozytorium
+        if: always()
+        run: |
+          git config user.name "error-fare-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/seen_deals.db data/deals.json data/status.json data/last_run.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: stan skanera [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin ${{ github.ref_name }} && git push && break
+              sleep 5
+            done
+          else
+            echo "Bez zmian"
+          fi

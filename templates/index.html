@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>✈️ Łowca tanich lotów</title>
+<style>
+  :root { --bg:#f4f6f9; --card:#fff; --line:#e2e6ec; --text:#1d2430; --muted:#6b7686; --accent:#1a73e8; --ok:#0a7d2c; --bad:#c62828; --warn:#b26a00; }
+  * { box-sizing:border-box; } [hidden] { display:none !important; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); font-size:15px; }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:16px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header h1 { font-size:20px; margin:0; }
+  .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:13px; background:#eef1f5; color:var(--muted); }
+  .pill.on { background:#e6f4ea; color:var(--ok); } .pill.off { background:#fdecea; color:var(--bad); }
+  .dot { width:8px; height:8px; border-radius:50%; background:currentColor; }
+  main { max-width:1100px; margin:0 auto; padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:860px){ main { grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px; }
+  .card.wide { grid-column:1/-1; }
+  .card h2 { font-size:16px; margin:0 0 4px; display:flex; align-items:center; gap:8px; }
+  .card p.hint { margin:0 0 14px; color:var(--muted); font-size:13px; line-height:1.45; }
+  .card p.hint a { color:var(--accent); }
+  label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+  input[type=text], input[type=password], input[type=number], textarea, select {
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit; background:#fff; }
+  input:focus, textarea:focus { outline:2px solid #cfe0fb; border-color:var(--accent); }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; } .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; align-items:center; }
+  button { border:0; border-radius:8px; padding:9px 15px; font-size:14px; font-weight:600; cursor:pointer; background:#eef1f5; color:var(--text); font-family:inherit; }
+  button.primary { background:var(--accent); color:#fff; } button.danger { background:#fdecea; color:var(--bad); } button.ok { background:#e6f4ea; color:var(--ok); }
+  button:disabled { opacity:.5; cursor:default; }
+  .msg { font-size:13px; margin-top:8px; min-height:18px; } .msg.ok { color:var(--ok); } .msg.bad { color:var(--bad); } .msg.warn { color:var(--warn); }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .chip { display:flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px; cursor:pointer; background:#fafbfc; }
+  .chip input { margin:0; }
+  table { width:100%; border-collapse:collapse; font-size:13px; } th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); } th { color:var(--muted); font-weight:600; }
+  td.price { font-weight:700; color:var(--ok); white-space:nowrap; } td a { color:var(--accent); }
+  pre { background:#0f172a; color:#d7dee8; font-size:12px; padding:12px; border-radius:8px; max-height:260px; overflow:auto; white-space:pre-wrap; margin:0; }
+  .steps { display:flex; flex-direction:column; gap:6px; }
+  .step { display:flex; gap:10px; align-items:center; } .step .n { width:24px; height:24px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex:none; }
+  details summary { cursor:pointer; color:var(--muted); font-size:13px; margin-top:10px; }
+  .modes { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:8px; } @media (max-width:860px){ .modes{grid-template-columns:1fr;} }
+  .mode { border:1px solid var(--line); border-radius:10px; padding:14px; } .mode h3 { margin:0 0 6px; font-size:14px; } .mode p { margin:0 0 10px; font-size:13px; color:var(--muted); line-height:1.4; }
+</style>
+</head>
+<body>
+<header>
+  <h1>✈️ Łowca tanich lotów</h1>
+  <span class="pill" id="pillEmail"><span class="dot"></span>E-mail</span>
+  <span class="pill" id="pillTg"><span class="dot"></span>Telegram</span>
+  <span class="pill" id="pillBg"><span class="dot"></span>Tryb w tle</span>
+  <span style="flex:1"></span>
+  <button class="primary" id="btnScan" onclick="scanNow()">🔍 Skanuj teraz</button>
+</header>
+
+<main>
+  <!-- ============ E-MAIL ============ -->
+  <section class="card">
+    <h2>1. E-mail – gdzie wysyłać okazje</h2>
+    <p class="hint">Potrzebne jest <b>hasło aplikacji</b> Gmail (nie zwykłe hasło). Włącz weryfikację dwuetapową, a potem
+      <a href="https://myaccount.google.com/apppasswords" target="_blank">utwórz hasło aplikacji ↗</a> – skopiuj 16 znaków.</p>
+    <label>Twój adres Gmail</label><input type="text" id="SMTP_USER" placeholder="imie@gmail.com">
+    <label>Hasło aplikacji</label><input type="password" id="SMTP_PASSWORD" placeholder="xxxx xxxx xxxx xxxx">
+    <label>Wysyłaj okazje na adres</label><input type="text" id="EMAIL_TO" placeholder="(domyślnie ten sam)">
+    <details><summary>Inna skrzynka niż Gmail</summary>
+      <div class="row"><div><label>Serwer SMTP</label><input type="text" id="SMTP_HOST"></div><div><label>Port</label><input type="text" id="SMTP_PORT"></div></div>
+    </details>
+    <div class="actions">
+      <button class="primary" onclick="saveSettings('email')">Zapisz</button>
+      <button onclick="testEmail()">Wyślij testowego maila</button>
+    </div>
+    <div class="msg" id="msgEmail"></div>
+  </section>
+
+  <!-- ============ TELEGRAM ============ -->
+  <section class="card">
+    <h2>2. Telegram – najszybsze źródło okazji</h2>
+    <p class="hint">Wejdź na <a href="https://my.telegram.org/apps" target="_blank">my.telegram.org/apps ↗</a>, zaloguj się numerem telefonu,
+      utwórz aplikację (nazwa dowolna) i przepisz <b>api_id</b> oraz <b>api_hash</b>.</p>
+    <div class="row">
+      <div><label>api_id</label><input type="text" id="TELEGRAM_API_ID" placeholder="np. 1234567"></div>
+      <div><label>api_hash</label><input type="password" id="TELEGRAM_API_HASH"></div>
+    </div>
+    <div id="tgLogin">
+      <div class="row">
+        <div><label>Numer telefonu (z +48)</label><input type="text" id="tgPhone" placeholder="+48600100200"></div>
+        <div><label>&nbsp;</label><button style="width:100%" onclick="tgSendCode()">Wyślij kod na Telegram</button></div>
+      </div>
+      <div class="row" id="tgCodeRow" hidden>
+        <div><label>Kod z aplikacji Telegram</label><input type="text" id="tgCode" placeholder="12345"></div>
+        <div><label>&nbsp;</label><button class="primary" style="width:100%" onclick="tgSignIn()">Zaloguj</button></div>
+      </div>
+      <div id="tgPassRow" hidden><label>Hasło dwuetapowe Telegrama (masz je włączone)</label><input type="password" id="tgPassword"></div>
+    </div>
+    <div id="tgLogged" hidden>
+      <div class="msg ok">✓ Zalogowano do Telegrama</div>
+      <div class="actions"><button onclick="loadChannels()">Pokaż moje kanały do wyboru</button><button class="danger" onclick="tgLogout()">Wyloguj</button></div>
+      <div class="chips" id="chips"></div>
+      <label>Śledzone kanały (nazwy z t.me/…, po przecinku)</label><input type="text" id="TELEGRAM_CHANNELS">
+      <p class="hint" style="margin-top:6px">Nie widzisz kanału? Dołącz do niego w aplikacji Telegram (np. Fly4free, Łowcy Mamutów, Pepper, Loter) i kliknij „Pokaż moje kanały” ponownie.</p>
+    </div>
+    <div class="actions"><button class="primary" onclick="saveSettings('tg')">Zapisz</button></div>
+    <div class="msg" id="msgTg"></div>
+  </section>
+
+  <!-- ============ PROGI ============ -->
+  <section class="card">
+    <h2>3. Lotniska i progi cenowe</h2>
+    <p class="hint">Powiadomienie przychodzi, gdy lot w obie strony jest tańszy niż próg <b>albo</b> gdy cena spadła o ponad połowę względem typowej ceny na trasie.</p>
+    <label>Lotniska wylotu (kody IATA po przecinku)</label><input type="text" id="HOME_AIRPORTS">
+    <div class="row3">
+      <div><label>Europa – taniej niż (PLN)</label><input type="number" id="MAX_PRICE_EUROPE_PLN"></div>
+      <div><label>Daleki dystans – taniej niż (PLN)</label><input type="number" id="MAX_PRICE_LONGHAUL_PLN"></div>
+      <div><label>Spadek vs. typowa cena (0.5 = −50%)</label><input type="number" step="0.05" id="PRICE_DROP_RATIO"></div>
+    </div>
+    <details><summary>Więcej źródeł (RSS, strony linii, Facebook, Google Flights)</summary>
+      <label>Kanały RSS (po przecinku)</label><textarea id="RSS_FEEDS" rows="2"></textarea>
+      <div class="row">
+        <div><label>Strony promocji Ryanair/Wizz/LOT</label><select id="ENABLE_AIRLINE_PAGES"><option value="0">wyłączone</option><option value="1">włączone (wymaga Playwright)</option></select></div>
+        <div><label>Facebook (publiczne strony)</label><select id="ENABLE_FACEBOOK"><option value="0">wyłączone</option><option value="1">włączone (często blokowane)</option></select></div>
+      </div>
+      <label>Strony Facebook (nazwy po przecinku)</label><input type="text" id="FACEBOOK_PAGES">
+      <label>Klucz SerpAPI (Google Flights, 100 zapytań/mies. za darmo – <a href="https://serpapi.com" target="_blank">serpapi.com</a>)</label><input type="password" id="SERPAPI_KEY">
+      <label>Klucz Kiwi Tequila (jeśli masz)</label><input type="password" id="KIWI_API_KEY">
+      <label>Tryb testowy (nie wysyłaj maili, tylko loguj)</label><select id="DRY_RUN"><option value="0">wyłączony – wysyłaj maile</option><option value="1">włączony – tylko log</option></select>
+    </details>
+    <div class="actions"><button class="primary" onclick="saveSettings('thr')">Zapisz</button></div>
+    <div class="msg" id="msgThr"></div>
+  </section>
+
+  <!-- ============ TRYB DZIAŁANIA ============ -->
+  <section class="card">
+    <h2>4. Jak ma działać</h2>
+    <div class="modes">
+      <div class="mode"><h3>Teraz, jeden raz</h3><p>Sprawdza wszystkie źródła i wysyła maila, jeśli coś znajdzie.</p><button class="primary" onclick="scanNow()">Skanuj teraz</button></div>
+      <div class="mode"><h3>W tle na tym komputerze</h3><p>Telegram na żywo – mail w kilka sekund od posta. Startuje sam po włączeniu komputera. Komputer nie może spać.</p>
+        <button class="ok" id="btnBgStart" onclick="bg('start')">Włącz</button> <button class="danger" id="btnBgStop" onclick="bg('stop')">Zatrzymaj</button></div>
+      <div class="mode"><h3>W chmurze (GitHub, za darmo)</h3><p>Działa co 30 min nawet przy wyłączonym komputerze. Jednorazowo: token GitHub.</p><button onclick="document.getElementById('gh').scrollIntoView({behavior:'smooth'})">Skonfiguruj ↓</button></div>
+    </div>
+    <div class="msg" id="msgMode"></div>
+  </section>
+
+  <!-- ============ OKAZJE ============ -->
+  <section class="card wide">
+    <h2>Znalezione okazje <span class="pill" id="dealCount">0</span></h2>
+    <p class="hint">Ostatnie oferty, o których wysłano maila. Prawdziwe error fares zdarzają się kilka razy w miesiącu – pusta lista na początku jest normalna.</p>
+    <div style="overflow-x:auto"><table><thead><tr><th>Kiedy</th><th>Trasa</th><th>Cena</th><th>Źródło</th><th>Link</th></tr></thead><tbody id="deals"></tbody></table></div>
+  </section>
+
+  <!-- ============ GITHUB ============ -->
+  <section class="card wide" id="gh">
+    <h2>5. Wyślij do chmury (GitHub Actions)</h2>
+    <div class="steps">
+      <div class="step"><span class="n">1</span><span>Załóż darmowe konto na <a href="https://github.com/signup" target="_blank">github.com ↗</a> (jeśli nie masz).</span></div>
+      <div class="step"><span class="n">2</span><span><a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=error-fare-hunter" target="_blank">Utwórz token ↗</a> – zakresy <b>repo</b> i <b>workflow</b> są już zaznaczone; ustaw „Expiration: No expiration”, kliknij „Generate token” i skopiuj.</span></div>
+      <div class="step"><span class="n">3</span><span>Wklej token poniżej i kliknij „Wyślij”. Panel sam utworzy prywatne repozytorium, wgra kod, ustawi sekrety i uruchomi pierwszy przebieg.</span></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div><label>Token GitHub</label><input type="password" id="ghToken" placeholder="ghp_…"></div>
+      <div><label>Nazwa repozytorium</label><input type="text" id="ghRepo" value="error-fare-hunter"></div>
+    </div>
+    <div class="actions"><button class="primary" id="btnGh" onclick="ghDeploy()">Wyślij do GitHub</button></div>
+    <div class="msg" id="msgGh"></div>
+  </section>
+
+  <!-- ============ LOG ============ -->
+  <section class="card wide">
+    <h2>Dziennik</h2>
+    <pre id="log">…</pre>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const FIELDS = ["SMTP_USER","SMTP_PASSWORD","EMAIL_TO","SMTP_HOST","SMTP_PORT","TELEGRAM_API_ID","TELEGRAM_API_HASH","TELEGRAM_CHANNELS",
+  "HOME_AIRPORTS","MAX_PRICE_EUROPE_PLN","MAX_PRICE_LONGHAUL_PLN","PRICE_DROP_RATIO","RSS_FEEDS","ENABLE_AIRLINE_PAGES","ENABLE_FACEBOOK","FACEBOOK_PAGES","SERPAPI_KEY","KIWI_API_KEY","DRY_RUN"];
+const GROUPS = { email:["SMTP_USER","SMTP_PASSWORD","EMAIL_TO","SMTP_HOST","SMTP_PORT"], tg:["TELEGRAM_API_ID","TELEGRAM_API_HASH","TELEGRAM_CHANNELS"],
+  thr:["HOME_AIRPORTS","MAX_PRICE_EUROPE_PLN","MAX_PRICE_LONGHAUL_PLN","PRICE_DROP_RATIO","RSS_FEEDS","ENABLE_AIRLINE_PAGES","ENABLE_FACEBOOK","FACEBOOK_PAGES","SERPAPI_KEY","KIWI_API_KEY","DRY_RUN"] };
+const MSG = { email:"msgEmail", tg:"msgTg", thr:"msgThr" };
+let loadedOnce = false;
+
+async function api(path, body) {
+  const r = await fetch(path, body ? {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)} : {});
+  return r.json();
+}
+function msg(id, text, cls) { const el = $(id); el.textContent = text; el.className = "msg " + (cls||""); }
+function pill(id, on, label) { const el = $(id); el.className = "pill " + (on ? "on" : "off"); el.lastChild.textContent = label; }
+
+async function refresh() {
+  const st = await api("/api/state");
+  if (!loadedOnce) { FIELDS.forEach(k => { if ($(k) && st.settings[k] !== undefined) $(k).value = st.settings[k]; }); loadedOnce = true; }
+  pill("pillEmail", st.status.email_ok, st.status.email_ok ? "E-mail gotowy" : "E-mail: uzupełnij");
+  pill("pillTg", st.status.telegram_ok, st.status.telegram_ok ? "Telegram zalogowany" : "Telegram: zaloguj");
+  pill("pillBg", st.status.daemon, st.status.daemon ? "Działa w tle" : "Tło wyłączone");
+  $("tgLogin").hidden = st.status.telegram_ok; $("tgLogged").hidden = !st.status.telegram_ok;
+  $("btnScan").disabled = st.status.scanning; $("btnScan").textContent = st.status.scanning ? "⏳ Skanuję…" : "🔍 Skanuj teraz";
+  $("btnBgStart").disabled = st.status.daemon; $("btnBgStop").disabled = !st.status.daemon;
+  $("dealCount").textContent = st.deals.length;
+  $("deals").innerHTML = st.deals.length ? st.deals.map(d =>
+    `<tr><td>${d.seen_at}</td><td>${d.route}</td><td class="price">${Math.round(d.price)} PLN</td><td>${d.source}</td><td><a href="${d.url}" target="_blank">otwórz ↗</a></td></tr>`).join("")
+    : `<tr><td colspan="5" style="color:var(--muted)">Jeszcze nic – uruchom skan lub włącz tryb w tle.</td></tr>`;
+  const logEl = $("log"); const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 20;
+  logEl.textContent = st.log || "(pusto)"; if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+}
+
+async function saveSettings(group) {
+  const body = {}; GROUPS[group].forEach(k => { if ($(k)) body[k] = $(k).value; });
+  const r = await api("/api/settings", body);
+  msg(MSG[group], r.ok ? "✓ Zapisano" : "✗ " + r.error, r.ok ? "ok" : "bad");
+  refresh();
+}
+async function testEmail() {
+  await saveSettings("email"); msg("msgEmail", "Wysyłam testowego maila…", "warn");
+  const r = await api("/api/test-email", {});
+  msg("msgEmail", r.ok ? "✓ Wysłano – sprawdź skrzynkę (także SPAM)" : "✗ " + r.error, r.ok ? "ok" : "bad");
+}
+async function tgSendCode() {
+  await saveSettings("tg"); msg("msgTg", "Wysyłam kod…", "warn");
+  const r = await api("/api/telegram/send-code", {phone: $("tgPhone").value});
+  if (r.ok) { $("tgCodeRow").hidden = false; msg("msgTg", "Kod wysłany – sprawdź aplikację Telegram (nie SMS) i wpisz go obok.", "ok"); }
+  else msg("msgTg", "✗ " + r.error, "bad");
+}
+async function tgSignIn() {
+  msg("msgTg", "Loguję…", "warn");
+  const r = await api("/api/telegram/sign-in", {code: $("tgCode").value, password: $("tgPassword").value});
+  if (r.ok) { msg("msgTg", "✓ Zalogowano", "ok"); await refresh(); loadChannels(); }
+  else { if (r.needs_password) $("tgPassRow").hidden = false; msg("msgTg", "✗ " + r.error, "bad"); }
+}
+async function tgLogout() { await api("/api/telegram/logout", {}); refresh(); }
+async function loadChannels() {
+  msg("msgTg", "Pobieram listę kanałów…", "warn");
+  const r = await api("/api/telegram/channels");
+  if (!r.ok) { msg("msgTg", "✗ " + r.error, "bad"); return; }
+  $("chips").innerHTML = r.channels.map(c => `<label class="chip"><input type="checkbox" value="${c.username}" ${c.selected?"checked":""} onchange="chipsToField()"> ${c.name} <span style="color:var(--muted)">t.me/${c.username}</span></label>`).join("");
+  msg("msgTg", r.channels.length ? "Zaznacz kanały do śledzenia i kliknij Zapisz." : "Brak publicznych kanałów na tym koncie – dołącz do kilku w Telegramie.", r.channels.length ? "ok" : "warn");
+}
+function chipsToField() { $("TELEGRAM_CHANNELS").value = [...document.querySelectorAll("#chips input:checked")].map(i => i.value).join(","); }
+async function scanNow() {
+  const r = await api("/api/scan", {});
+  msg("msgMode", r.ok ? "Skan uruchomiony – postęp w dzienniku na dole." : "✗ " + r.error, r.ok ? "ok" : "bad"); refresh();
+}
+async function bg(action) {
+  const r = await api("/api/background/" + action, {});
+  msg("msgMode", r.ok ? (action === "start" ? "✓ Tryb w tle włączony – możesz zamknąć tę stronę." : "Tryb w tle zatrzymany.") : "✗ " + r.error, r.ok ? "ok" : "bad"); refresh();
+}
+async function ghDeploy() {
+  $("btnGh").disabled = true; msg("msgGh", "Wysyłam – to potrwa około minuty…", "warn");
+  const r = await api("/api/github/deploy", {token: $("ghToken").value, repo: $("ghRepo").value});
+  const steps = (r.steps || []).map(s => "✓ " + s).join("  ·  ");
+  if (r.ok) $("msgGh").innerHTML = `<span class="ok">${steps}</span><br>Gotowe! Postęp: <a href="${r.url}" target="_blank">${r.url}</a> – od teraz skaner działa w chmurze co 30 minut.`;
+  else msg("msgGh", (steps ? steps + "  ·  " : "") + "✗ " + r.error, "bad");
+  $("btnGh").disabled = false;
+}
+refresh(); setInterval(refresh, 4000);
+</script>
+</body>
+</html>

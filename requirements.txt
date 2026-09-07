@@ -1,0 +1,21 @@
+# Podstawa
+requests>=2.31
+python-dotenv>=1.0
+
+# Parsowanie stron i RSS
+beautifulsoup4>=4.12
+feedparser>=6.0
+lxml>=5.0
+
+# Telegram
+telethon>=1.36
+
+# Renderowanie stron JS (linie lotnicze, Facebook) – opcjonalne, ale zalecane
+playwright>=1.45
+
+# Panel WWW (app.py) + szyfrowanie sekretów GitHub
+flask>=3.0
+pynacl>=1.5
+
+# Testy
+pytest>=8.0

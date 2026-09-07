@@ -1,0 +1,1 @@
+"""Logika detekcji okazji cenowych."""
