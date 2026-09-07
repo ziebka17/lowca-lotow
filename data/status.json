@@ -1,6 +1,6 @@
 {
-  "step": "code_sent",
-  "ok": true,
-  "message": "Kod (5 cyfr) wysłany do APLIKACJI Telegram – otwórz czat „Telegram” (oficjalne powiadomienia) na urządzeniu, gdzie jesteś zalogowany. Wpisz kod na stronie.",
-  "time": "2026-09-07T21:25:44+00:00"
+  "step": "telegram",
+  "ok": false,
+  "message": "Błąd Telegrama: 'TelegramClient' object has no attribute 'resend_code_request'",
+  "time": "2026-09-07T21:26:20+00:00"
 }
