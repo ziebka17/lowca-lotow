@@ -290,10 +290,13 @@ async function setSecret(name, value) {
   return r.ok;
 }
 async function deleteSecret(name) { return (await gh("DELETE", `${repoPath()}/actions/secrets/${name}`)).ok; }
+let lastDispatchError = "";
 async function dispatch(workflow, inputs) {
   const r = await gh("POST", `${repoPath()}/actions/workflows/${workflow}/dispatches`, { ref: "main", inputs: inputs || {} });
+  lastDispatchError = r.ok ? "" : `GitHub ${r.status}: ${(r.data && r.data.message) || "nieznany błąd"}`;
   return r.ok;
 }
+function dispatchFail(base) { return `${base} <span style="color:var(--muted)">(${esc(lastDispatchError)})</span>`; }
 /* czekaj, aż workflow zapisze nowy data/status.json (nowszy niż `after`) */
 async function waitForStatus(after, timeoutMs = 300000) {
   const start = Date.now();
@@ -380,7 +383,7 @@ async function testEmail() {
   if (!await saveEmail()) return;
   if (!S.secrets.has("SMTP_PASSWORD")) { msg("msgEmail", "Wpisz hasło aplikacji.", "bad"); return; }
   const t = Date.now(); msg("msgEmail", spinner("Wysyłam testowego maila (ok. 1 min)…"), "warn");
-  if (!await dispatch("checker.yml", { mode: "test_email" })) { msg("msgEmail", "Nie udało się uruchomić – spróbuj za chwilę.", "bad"); return; }
+  if (!await dispatch("checker.yml", { mode: "test_email" })) { msg("msgEmail", dispatchFail("Nie udało się uruchomić w chmurze."), "bad"); return; }
   const st = await waitForStatus(t);
   msg("msgEmail", st ? (st.ok ? "✓ " + st.message : "✗ " + st.message) : "Brak odpowiedzi – sprawdź Historię uruchomień.", st && st.ok ? "ok" : "bad");
 }
@@ -400,7 +403,7 @@ async function tgSendCode() {
   if (!phone.startsWith("+")) { msg("msgTg", "Numer z kierunkowym, np. +48600100200", "bad"); return; }
   $("btnCode").disabled = true; const t = Date.now();
   msg("msgTg", spinner("Wysyłam kod przez chmurę (ok. 1 min)… Gdy przyjdzie do aplikacji Telegram, wpisz go poniżej."), "warn");
-  if (!await dispatch("telegram-login.yml", { action: "send_code", phone })) { msg("msgTg", "Nie udało się uruchomić.", "bad"); $("btnCode").disabled = false; return; }
+  if (!await dispatch("telegram-login.yml", { action: "send_code", phone })) { msg("msgTg", dispatchFail("Nie udało się uruchomić w chmurze."), "bad"); $("btnCode").disabled = false; return; }
   $("tgCodeBox").hidden = false;
   const st = await waitForStatus(t); $("btnCode").disabled = false;
   if (!st) { msg("msgTg", "Brak odpowiedzi z chmury – sprawdź Historię uruchomień.", "bad"); return; }
@@ -410,7 +413,7 @@ async function tgSignIn() {
   const code = $("tgCode").value.trim(), password = $("tgPassword").value;
   if (!code) { msg("msgTg", "Wpisz kod z Telegrama.", "bad"); return; }
   $("btnSignIn").disabled = true; const t = Date.now(); msg("msgTg", spinner("Loguję (ok. 1 min)…"), "warn");
-  if (!await dispatch("telegram-login.yml", { action: "sign_in", code, password })) { msg("msgTg", "Nie udało się uruchomić.", "bad"); $("btnSignIn").disabled = false; return; }
+  if (!await dispatch("telegram-login.yml", { action: "sign_in", code, password })) { msg("msgTg", dispatchFail("Nie udało się uruchomić w chmurze."), "bad"); $("btnSignIn").disabled = false; return; }
   const st = await waitForStatus(t); $("btnSignIn").disabled = false;
   if (!st) { msg("msgTg", "Brak odpowiedzi z chmury.", "bad"); return; }
   if (st.step === "needs_password") $("tgPassBox").hidden = false;
@@ -441,7 +444,7 @@ async function saveThresholds() {
 /* ============================================================ skan */
 async function scanNow() {
   $("btnScan").disabled = true; const t = Date.now(); msg("msgScan", spinner("Skanuję w chmurze (1–3 min)…"), "warn");
-  if (!await dispatch("checker.yml", { mode: "scan" })) { msg("msgScan", "Nie udało się uruchomić – spróbuj za chwilę.", "bad"); $("btnScan").disabled = false; return; }
+  if (!await dispatch("checker.yml", { mode: "scan" })) { msg("msgScan", dispatchFail("Nie udało się uruchomić w chmurze."), "bad"); $("btnScan").disabled = false; return; }
   const st = await waitForStatus(t); $("btnScan").disabled = false;
   msg("msgScan", st ? (st.ok ? "✓ " : "✗ ") + st.message : "Skan trwa dłużej niż zwykle – wynik pojawi się w sekcji Stan.", st && st.ok ? "ok" : "warn");
   await refresh(false);

@@ -38,7 +38,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Chromium dla Playwright (tylko gdy włączone strony linii lub Facebook)
-        if: ${{ (vars.ENABLE_AIRLINE_PAGES || secrets.ENABLE_AIRLINE_PAGES) == '1' || (vars.ENABLE_FACEBOOK || secrets.ENABLE_FACEBOOK) == '1' }}
+        if: ${{ vars.ENABLE_AIRLINE_PAGES == '1' || vars.ENABLE_FACEBOOK == '1' }}
         run: python -m playwright install --with-deps chromium
 
       - name: Uruchom skaner
