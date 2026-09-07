@@ -25,19 +25,42 @@ from scripts.gh_api import GitHub, write_status  # noqa: E402
 DATA = Path(__file__).resolve().parents[1] / "data"
 
 
-async def send_code(api_id: int, api_hash: str, phone: str) -> tuple[str, str]:
+def describe_sent(sent) -> str:
+    """Po ludzku: którą drogą Telegram wysłał kod (typ z odpowiedzi auth.sentCode)."""
+    t = getattr(sent, "type", None)
+    name = type(t).__name__ if t is not None else ""
+    length = getattr(t, "length", None)
+    if name == "SentCodeTypeApp":
+        return f"Kod ({length} cyfr) wysłany do APLIKACJI Telegram – otwórz czat „Telegram” (oficjalne powiadomienia) na urządzeniu, gdzie jesteś zalogowany."
+    if name == "SentCodeTypeSms":
+        return f"Kod ({length} cyfr) wysłany SMS-em na numer telefonu."
+    if name == "SentCodeTypeCall":
+        return f"Telegram DZWONI na Twój numer i dyktuje {length}-cyfrowy kod."
+    if name in ("SentCodeTypeFlashCall", "SentCodeTypeMissedCall"):
+        prefix = getattr(t, "prefix", "") or ""
+        return f"Telegram wykona NIEODEBRANE połączenie – kodem jest ostatnie {length} cyfr numeru dzwoniącego{(' (zaczyna się od ' + prefix + ')') if prefix else ''}."
+    if name == "SentCodeTypeEmailCode":
+        return f"Kod ({length} cyfr) wysłany E-MAILEM na adres logowania {getattr(t, 'email_pattern', '')} – sprawdź skrzynkę (i SPAM)."
+    if name == "SentCodeTypeSetUpEmailRequired":
+        return "Telegram wymaga dla tego konta ustawienia e-maila logowania: w aplikacji Telegram → Ustawienia → Prywatność i bezpieczeństwo → Adres e-mail logowania. Ustaw go i spróbuj ponownie."
+    if name == "SentCodeTypeFragmentSms":
+        return "Kod dostępny na fragment.com (numer anonimowy)."
+    return f"Kod wysłany (typ: {name or 'nieznany'})."
+
+
+async def send_code(api_id: int, api_hash: str, phone: str) -> tuple[str, str, str]:
     from telethon import TelegramClient
     from telethon.sessions import StringSession
     client = TelegramClient(StringSession(), api_id, api_hash)
     await client.connect()
     try:
         sent = await client.send_code_request(phone)
-        return client.session.save(), sent.phone_code_hash
+        return client.session.save(), sent.phone_code_hash, describe_sent(sent)
     finally:
         await client.disconnect()
 
 
-async def resend_sms(api_id: int, api_hash: str, pending: dict) -> str:
+async def resend_sms(api_id: int, api_hash: str, pending: dict) -> tuple[str, str]:
     """Poproś Telegram o ponowne wysłanie kodu inną drogą (zwykle SMS)."""
     from telethon import TelegramClient
     from telethon.sessions import StringSession
@@ -45,7 +68,7 @@ async def resend_sms(api_id: int, api_hash: str, pending: dict) -> str:
     await client.connect()
     try:
         sent = await client.resend_code_request(pending["phone"], pending["hash"])
-        return sent.phone_code_hash
+        return sent.phone_code_hash, describe_sent(sent)
     finally:
         await client.disconnect()
 
@@ -85,18 +108,18 @@ def main() -> int:
 
         if action == "send_code":
             phone = os.environ.get("PHONE", "").strip()
-            session, code_hash = asyncio.run(send_code(api_id, api_hash, phone))
+            session, code_hash, how = asyncio.run(send_code(api_id, api_hash, phone))
             gh.set_secret("TG_PENDING", json.dumps({"session": session, "hash": code_hash, "phone": phone}))
-            write_status("code_sent", True, "Kod wysłany do aplikacji Telegram. Wpisz go na stronie.")
+            write_status("code_sent", True, how + " Wpisz kod na stronie.")
 
         elif action == "resend_sms":
             pending = json.loads(os.environ.get("TG_PENDING") or "{}")
             if not pending:
                 write_status("telegram", False, "Najpierw kliknij „Wyślij kod”.")
                 return 0
-            pending["hash"] = asyncio.run(resend_sms(api_id, api_hash, pending))
+            pending["hash"], how = asyncio.run(resend_sms(api_id, api_hash, pending))
             gh.set_secret("TG_PENDING", json.dumps(pending))
-            write_status("code_sent", True, "Kod wysłany ponownie (SMS-em lub połączeniem). Wpisz go na stronie.")
+            write_status("code_sent", True, "Ponownie: " + how + " Wpisz kod na stronie.")
 
         elif action == "sign_in":
             pending = json.loads(os.environ.get("TG_PENDING") or "{}")
