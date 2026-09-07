@@ -1,6 +1,10 @@
 {
-  "step": "telegram",
-  "ok": false,
-  "message": "Błąd Telegrama: 'TelegramClient' object has no attribute 'resend_code_request'",
-  "time": "2026-09-07T21:26:20+00:00"
+  "step": "scan",
+  "ok": true,
+  "message": "Skan zakończony – brak nowych okazji.",
+  "time": "2026-09-07T21:26:49+00:00",
+  "sent": 0,
+  "sources": [
+    "rss"
+  ]
 }
