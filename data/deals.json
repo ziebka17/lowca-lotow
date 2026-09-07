@@ -1,0 +1,44 @@
+[
+  {
+    "seen_at": "2026-09-07 21:04",
+    "route": "GDN-TGD",
+    "price": 73.0,
+    "source": "rss:pepper.pl",
+    "url": "https://www.pepper.pl/promocje/tanie-loty-do-czarnogory-w-pazdzierniku-z-gdanska-za-13873-zl-w-dwie-strony-1345679"
+  },
+  {
+    "seen_at": "2026-09-07 21:04",
+    "route": "KRK-BCN",
+    "price": 72.0,
+    "source": "rss:pepper.pl",
+    "url": "https://www.pepper.pl/promocje/ryanair-promocja-ucieknij-od-codziennosci-na-loty-z-polskich-miast-od-6472-zl-od-wrzesnia-do-konca-listopada-1346466"
+  },
+  {
+    "seen_at": "2026-09-07 21:04",
+    "route": "KTW-???",
+    "price": 65.0,
+    "source": "rss:pepper.pl",
+    "url": "https://www.pepper.pl/promocje/loty-katowice-bergamo-14-1610-1346294"
+  },
+  {
+    "seen_at": "2026-09-07 21:04",
+    "route": "WAW-OTP",
+    "price": 34.0,
+    "source": "rss:pepper.pl",
+    "url": "https://www.pepper.pl/promocje/tydzien-w-rumunii-dla-dwojga-z-samochodem-za-1000zl-lacznie-1346907"
+  },
+  {
+    "seen_at": "2026-09-07 21:04",
+    "route": "WAW-SOF",
+    "price": 30.0,
+    "source": "rss:pepper.pl",
+    "url": "https://www.pepper.pl/promocje/bulgaria-sloneczny-brzeg-tydzien-w-4-hotelu-hotel-wela-z-all-inclusive-0809-15092026-at-itaka-1346852"
+  },
+  {
+    "seen_at": "2026-09-07 21:04",
+    "route": "POZ-HER",
+    "price": 21.5,
+    "source": "rss:pepper.pl",
+    "url": "https://www.pepper.pl/promocje/grecja-kreta-tydzien-w-3-hotelu-hotel-palm-bay-z-wyzywieniem-hb-0909-1609-at-itaka-1346648"
+  }
+]
