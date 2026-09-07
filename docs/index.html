@@ -201,6 +201,8 @@
           <label>Kod z aplikacji Telegram</label><input type="text" id="tgCode" inputmode="numeric" placeholder="12345">
           <div id="tgPassBox" hidden><label>Hasło dwuetapowe Telegrama</label><input type="password" id="tgPassword"></div>
           <div class="actions"><button class="primary" id="btnSignIn" onclick="tgSignIn()">Zaloguj</button></div>
+          <p class="hint" style="margin-top:10px">Kod przychodzi jako wiadomość od konta „Telegram” w aplikacji (nie SMS). Nie ma go po 2 minutach?</p>
+          <div class="actions"><button id="btnResend" onclick="tgResendSms()">Nie dostałem kodu – wyślij SMS-em</button></div>
         </div>
       </div>
       <div id="tgLoggedBox" hidden>
@@ -252,7 +254,7 @@ const LS = { token: "efh_token", repo: "efh_repo", owner: "efh_owner" };
 const VAR_KEYS = ["SMTP_USER","EMAIL_TO","TELEGRAM_API_ID","TELEGRAM_CHANNELS","HOME_AIRPORTS","MAX_PRICE_EUROPE_PLN","MAX_PRICE_LONGHAUL_PLN","PRICE_DROP_RATIO","RSS_FEEDS","ENABLE_AIRLINE_PAGES","DRY_RUN"];
 const DEFAULT_VARS = {
   HOME_AIRPORTS: "WAW,WMI,KRK,GDN,KTW,WRO,POZ,BER", MAX_PRICE_EUROPE_PLN: "60", MAX_PRICE_LONGHAUL_PLN: "1000", PRICE_DROP_RATIO: "0.5",
-  TELEGRAM_CHANNELS: "", RSS_FEEDS: "https://www.fly4free.pl/feed/,https://loter.pl/feed/,https://www.pepper.pl/rss/grupa/podroze",
+  TELEGRAM_CHANNELS: "", RSS_FEEDS: "https://www.fly4free.pl/feed/,https://loter.pl/feed/",
   ENABLE_AIRLINE_PAGES: "0", DRY_RUN: "0", SMTP_HOST: "smtp.gmail.com", SMTP_PORT: "587",
 };
 let S = { token: null, repo: null, owner: null, vars: {}, secrets: new Set(), status: null, channels: [], busy: false };
@@ -350,6 +352,10 @@ async function refresh(fillInputs) {
   S.vars = Object.assign({}, DEFAULT_VARS, Object.fromEntries(((vars.data || {}).variables || []).map(v => [v.name, v.value])));
   S.secrets = new Set((((secrets.data || {}).secrets) || []).map(s => s.name));
   S.status = status; S.channels = channels || [];
+  if ((S.vars.RSS_FEEDS || "").includes("pepper.pl")) {  // jednorazowe usunięcie Peppera z RSS
+    S.vars.RSS_FEEDS = S.vars.RSS_FEEDS.split(",").filter(u => !u.includes("pepper.pl")).join(",");
+    await setVar("RSS_FEEDS", S.vars.RSS_FEEDS); if ($("RSS_FEEDS")) $("RSS_FEEDS").value = S.vars.RSS_FEEDS;
+  }
   if (fillInputs) VAR_KEYS.forEach(k => { if ($(k) && S.vars[k] !== undefined) $(k).value = S.vars[k]; });
 
   const emailOk = !!(S.vars.SMTP_USER && S.secrets.has("SMTP_PASSWORD"));
@@ -408,6 +414,12 @@ async function tgSendCode() {
   const st = await waitForStatus(t); $("btnCode").disabled = false;
   if (!st) { msg("msgTg", "Brak odpowiedzi z chmury – sprawdź Historię uruchomień.", "bad"); return; }
   msg("msgTg", (st.ok ? "✓ " : "✗ ") + st.message, st.ok ? "ok" : "bad");
+}
+async function tgResendSms() {
+  $("btnResend").disabled = true; const t = Date.now(); msg("msgTg", spinner("Proszę Telegram o kod inną drogą (ok. 1 min)…"), "warn");
+  if (!await dispatch("telegram-login.yml", { action: "resend_sms" })) { msg("msgTg", dispatchFail("Nie udało się uruchomić w chmurze."), "bad"); $("btnResend").disabled = false; return; }
+  const st = await waitForStatus(t); $("btnResend").disabled = false;
+  msg("msgTg", st ? (st.ok ? "✓ " : "✗ ") + st.message : "Brak odpowiedzi z chmury.", st && st.ok ? "ok" : "bad");
 }
 async function tgSignIn() {
   const code = $("tgCode").value.trim(), password = $("tgPassword").value;
@@ -490,8 +502,9 @@ async function install() {
 
     if (!await setSecret("GH_PAT", token)) throw new Error("Nie udało się zapisać sekretu GH_PAT.");
     ilog("✓ Zapisano token jako sekret (potrzebny do logowania Telegrama z telefonu)");
-    for (const [k, v] of Object.entries(DEFAULT_VARS)) await setVar(k, v);
-    ilog("✓ Ustawiono domyślne progi i lotniska");
+    const existing = new Set(((((await gh("GET", `${repoPath()}/actions/variables?per_page=100`)).data || {}).variables) || []).map(v => v.name));
+    for (const [k, v] of Object.entries(DEFAULT_VARS)) if (!existing.has(k)) await setVar(k, v);
+    ilog(existing.size ? "✓ Zachowano Twoje dotychczasowe ustawienia" : "✓ Ustawiono domyślne progi i lotniska");
     await gh("PUT", `${repoPath()}/actions/permissions/workflow`, { default_workflow_permissions: "write", can_approve_pull_request_reviews: false });
     ilog("✓ Włączono zapis stanu przez Actions");
 

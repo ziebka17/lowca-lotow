@@ -37,6 +37,19 @@ async def send_code(api_id: int, api_hash: str, phone: str) -> tuple[str, str]:
         await client.disconnect()
 
 
+async def resend_sms(api_id: int, api_hash: str, pending: dict) -> str:
+    """Poproś Telegram o ponowne wysłanie kodu inną drogą (zwykle SMS)."""
+    from telethon import TelegramClient
+    from telethon.sessions import StringSession
+    client = TelegramClient(StringSession(pending["session"]), api_id, api_hash)
+    await client.connect()
+    try:
+        sent = await client.resend_code_request(pending["phone"], pending["hash"])
+        return sent.phone_code_hash
+    finally:
+        await client.disconnect()
+
+
 async def sign_in(api_id: int, api_hash: str, pending: dict, code: str, password: str) -> tuple[str, list]:
     from telethon import TelegramClient
     from telethon.errors import SessionPasswordNeededError
@@ -75,6 +88,15 @@ def main() -> int:
             session, code_hash = asyncio.run(send_code(api_id, api_hash, phone))
             gh.set_secret("TG_PENDING", json.dumps({"session": session, "hash": code_hash, "phone": phone}))
             write_status("code_sent", True, "Kod wysłany do aplikacji Telegram. Wpisz go na stronie.")
+
+        elif action == "resend_sms":
+            pending = json.loads(os.environ.get("TG_PENDING") or "{}")
+            if not pending:
+                write_status("telegram", False, "Najpierw kliknij „Wyślij kod”.")
+                return 0
+            pending["hash"] = asyncio.run(resend_sms(api_id, api_hash, pending))
+            gh.set_secret("TG_PENDING", json.dumps(pending))
+            write_status("code_sent", True, "Kod wysłany ponownie (SMS-em lub połączeniem). Wpisz go na stronie.")
 
         elif action == "sign_in":
             pending = json.loads(os.environ.get("TG_PENDING") or "{}")

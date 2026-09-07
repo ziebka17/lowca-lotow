@@ -182,7 +182,7 @@ def step_telegram(env: dict) -> None:
     except Exception as exc:  # noqa: BLE001
         print(f"✗ Nie udało się pobrać kanałów: {exc}"); channels = []
 
-    current = set(env.get("TELEGRAM_CHANNELS", "fly4free,lowcymamutow,pepperpl,loterpl").split(","))
+    current = set(env.get("TELEGRAM_CHANNELS", "fly4free,lowcymamutow,loterpl").split(","))
     if channels:
         print("Twoje publiczne kanały/grupy (x = już wybrany):")
         for i, (u, name) in enumerate(channels, 1):
@@ -206,7 +206,7 @@ def step_thresholds(env: dict) -> None:
     env["MAX_PRICE_EUROPE_PLN"] = ask("Europa – powiadom, gdy lot w obie strony tańszy niż (PLN)", env.get("MAX_PRICE_EUROPE_PLN", "60"))
     env["MAX_PRICE_LONGHAUL_PLN"] = ask("Daleki dystans – powiadom, gdy tańszy niż (PLN)", env.get("MAX_PRICE_LONGHAUL_PLN", "1000"))
     env.setdefault("PRICE_DROP_RATIO", "0.5")
-    env.setdefault("RSS_FEEDS", "https://www.fly4free.pl/feed/,https://loter.pl/feed/,https://www.pepper.pl/rss/grupa/podroze")
+    env.setdefault("RSS_FEEDS", "https://www.fly4free.pl/feed/,https://loter.pl/feed/")
     env.setdefault("ENABLE_AIRLINE_PAGES", "0")   # wymaga Playwright – domyślnie wyłączone dla prostoty
     env.setdefault("ENABLE_FACEBOOK", "0")
     env.setdefault("DRY_RUN", "0")

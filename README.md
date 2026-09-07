@@ -134,7 +134,7 @@ dokładać kolejne źródła.
    wklej go jako `TELEGRAM_SESSION`. Dzięki temu w GitHub Actions nie trzeba już
    nic potwierdzać.
 4. `TELEGRAM_CHANNELS` – publiczne nazwy kanałów bez `@`, rozdzielone przecinkami.
-   Domyślnie: `fly4free,lowcymamutow,pepperpl,loterpl`. Sprawdź w Telegramie
+   Domyślnie: `fly4free,lowcymamutow,loterpl`. Sprawdź w Telegramie
    aktualne nazwy (link `t.me/NAZWA`) – kanały czasem zmieniają adresy. Do grup
    prywatnych musisz najpierw dołączyć z tego konta.
 

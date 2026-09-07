@@ -97,7 +97,7 @@ class Settings:
     telegram_session: str = _env("TELEGRAM_SESSION")     # StringSession
     telegram_channels: List[str] = field(
         default_factory=lambda: _env_list(
-            "TELEGRAM_CHANNELS", "fly4free,lowcymamutow,pepperpl,loterpl"
+            "TELEGRAM_CHANNELS", "fly4free,lowcymamutow,loterpl"
         )
     )
     telegram_lookback_minutes: int = _env_int("TELEGRAM_LOOKBACK_MINUTES", 60)
@@ -106,7 +106,7 @@ class Settings:
     rss_feeds: List[str] = field(
         default_factory=lambda: _env_list(
             "RSS_FEEDS",
-            "https://www.fly4free.pl/feed/,https://loter.pl/feed/,https://www.pepper.pl/rss/grupa/podroze",
+            "https://www.fly4free.pl/feed/,https://loter.pl/feed/",
         )
     )
     facebook_pages: List[str] = field(default_factory=lambda: _env_list("FACEBOOK_PAGES", ""))

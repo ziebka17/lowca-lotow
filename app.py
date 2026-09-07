@@ -60,8 +60,8 @@ DEFAULTS = {
     "SMTP_HOST": "smtp.gmail.com", "SMTP_PORT": "587",
     "HOME_AIRPORTS": "WAW,WMI,KRK,GDN,KTW,WRO,POZ,BER",
     "MAX_PRICE_EUROPE_PLN": "60", "MAX_PRICE_LONGHAUL_PLN": "1000", "PRICE_DROP_RATIO": "0.5",
-    "TELEGRAM_CHANNELS": "fly4free,lowcymamutow,pepperpl,loterpl",
-    "RSS_FEEDS": "https://www.fly4free.pl/feed/,https://loter.pl/feed/,https://www.pepper.pl/rss/grupa/podroze",
+    "TELEGRAM_CHANNELS": "fly4free,lowcymamutow,loterpl",
+    "RSS_FEEDS": "https://www.fly4free.pl/feed/,https://loter.pl/feed/",
     "ENABLE_AIRLINE_PAGES": "0", "ENABLE_FACEBOOK": "0", "DRY_RUN": "0",
 }
 
