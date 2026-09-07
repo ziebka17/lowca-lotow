@@ -1,10 +1,6 @@
 {
-  "step": "scan",
+  "step": "code_sent",
   "ok": true,
-  "message": "Skan zakończony – wysłano 6 okazji.",
-  "time": "2026-09-07T21:04:33+00:00",
-  "sent": 6,
-  "sources": [
-    "rss"
-  ]
+  "message": "Kod wysłany do aplikacji Telegram. Wpisz go na stronie.",
+  "time": "2026-09-07T21:06:38+00:00"
 }
