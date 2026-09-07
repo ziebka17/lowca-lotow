@@ -1,6 +1,10 @@
 {
-  "step": "code_sent",
+  "step": "scan",
   "ok": true,
-  "message": "Kod (5 cyfr) wysłany do APLIKACJI Telegram – otwórz czat „Telegram” (oficjalne powiadomienia) na urządzeniu, gdzie jesteś zalogowany. Wpisz kod na stronie.",
-  "time": "2026-09-07T21:18:04+00:00"
+  "message": "Skan zakończony – brak nowych okazji.",
+  "time": "2026-09-07T21:19:01+00:00",
+  "sent": 0,
+  "sources": [
+    "rss"
+  ]
 }
