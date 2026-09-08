@@ -1,10 +1,6 @@
 {
-  "step": "scan",
+  "step": "code_sent",
   "ok": true,
-  "message": "Skan zakończony – brak nowych okazji.",
-  "time": "2026-09-08T05:44:25+00:00",
-  "sent": 0,
-  "sources": [
-    "rss"
-  ]
+  "message": "Kod (5 cyfr) wysłany do APLIKACJI Telegram – otwórz czat „Telegram” (oficjalne powiadomienia) na urządzeniu, gdzie jesteś zalogowany. Wpisz kod na stronie.",
+  "time": "2026-09-08T05:56:41+00:00"
 }
