@@ -1,5 +1,12 @@
 [
   {
+    "seen_at": "2026-09-14 06:51",
+    "route": "WAW-SGN",
+    "price": 700.0,
+    "source": "rss:fly4free.pl",
+    "url": "https://www.fly4free.pl/z-azji-do-polski-wietnam-od-700pln/"
+  },
+  {
     "seen_at": "2026-09-10 09:45",
     "route": "WAW-LIS",
     "price": 61.0,
