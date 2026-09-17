@@ -1,9 +1,9 @@
 {
   "step": "scan",
   "ok": true,
-  "message": "Skan zakończony – brak nowych okazji.",
-  "time": "2026-09-17T15:21:39+00:00",
-  "sent": 0,
+  "message": "Skan zakończony – wysłano 1 okazji.",
+  "time": "2026-09-17T15:44:17+00:00",
+  "sent": 1,
   "sources": [
     "rss"
   ]

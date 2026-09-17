@@ -1,5 +1,12 @@
 [
   {
+    "seen_at": "2026-09-17 15:44",
+    "route": "WAW-NYC",
+    "price": 1369.0,
+    "source": "rss:fly4free.pl",
+    "url": "https://www.fly4free.pl/hit-tanie-loty-do-nowego-jorku-z-polskiod-1369-pln/"
+  },
+  {
     "seen_at": "2026-09-14 06:51",
     "route": "WAW-SGN",
     "price": 700.0,
