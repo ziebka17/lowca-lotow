@@ -1,5 +1,12 @@
 [
   {
+    "seen_at": "2026-10-19 17:11",
+    "route": "GDN-NYC",
+    "price": 123.0,
+    "source": "rss:fly4free.pl",
+    "url": "https://www.fly4free.pl/tatry-loty-taniej-niz-autem-lub-pociagiem-123pln/"
+  },
+  {
     "seen_at": "2026-10-06 06:55",
     "route": "WAW-CTA",
     "price": 66.0,
