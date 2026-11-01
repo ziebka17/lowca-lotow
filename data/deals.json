@@ -1,5 +1,12 @@
 [
   {
+    "seen_at": "2026-11-01 18:51",
+    "route": "WAW-PRG",
+    "price": 8.0,
+    "source": "rss:fly4free.pl",
+    "url": "https://www.fly4free.pl/juz-od-8-zl-nowa-pula-biletow-leo-express/"
+  },
+  {
     "seen_at": "2026-10-21 06:05",
     "route": "WAW-TAS",
     "price": 499.0,
