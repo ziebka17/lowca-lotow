@@ -1,5 +1,12 @@
 [
   {
+    "seen_at": "2026-11-02 19:43",
+    "route": "WAW-SGN",
+    "price": 450.0,
+    "source": "rss:fly4free.pl",
+    "url": "https://www.fly4free.pl/dreamlinerem-z-wietnamu-450-pln/"
+  },
+  {
     "seen_at": "2026-11-01 18:51",
     "route": "WAW-PRG",
     "price": 8.0,
