@@ -1,5 +1,12 @@
 [
   {
+    "seen_at": "2026-11-10 15:49",
+    "route": "WAW-ALA",
+    "price": 1488.0,
+    "source": "rss:fly4free.pl",
+    "url": "https://www.fly4free.pl/majowka-w-kazachstanie-za-1488-pln/"
+  },
+  {
     "seen_at": "2026-11-02 19:43",
     "route": "WAW-SGN",
     "price": 450.0,
