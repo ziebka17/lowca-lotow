@@ -1,5 +1,12 @@
 [
   {
+    "seen_at": "2026-11-12 12:30",
+    "route": "GDN-CHI",
+    "price": 620.0,
+    "source": "rss:fly4free.pl",
+    "url": "https://www.fly4free.pl/nba-i-nhl-w-chicago/"
+  },
+  {
     "seen_at": "2026-11-10 15:49",
     "route": "WAW-ALA",
     "price": 1488.0,
