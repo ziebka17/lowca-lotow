@@ -1,5 +1,12 @@
 [
   {
+    "seen_at": "2026-11-24 11:32",
+    "route": "WAW-MIA",
+    "price": 925.0,
+    "source": "rss:fly4free.pl",
+    "url": "https://www.fly4free.pl/loty-do-miami-za-1990-pln/"
+  },
+  {
     "seen_at": "2026-11-12 12:30",
     "route": "GDN-CHI",
     "price": 620.0,
